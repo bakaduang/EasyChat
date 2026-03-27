@@ -4,7 +4,7 @@ Modular, fully customizable and developer-friendly. EasyChat provides a vast amo
 ### Contributing
 Any contributions are welcome, please follow the naming conventions already present in the source code.
 
-### Markup / 标记效果实现说明
+### Markup / Item-Tag Implementation（标记效果实现说明）
 - EasyChat 的“标记效果”本质上是 ChatHUD 的 **Part（组件）系统**。核心入口在 `lua/easychat/chathud.lua` 的 `RegisterPart`、`CreateComponent`、`PushPartComponent`。
 - 聊天字符串会先被 `NormalizeString` 处理，再由 `PushString` 按 `<tag=value>` 解析成组件；组件在绘制时通过 `Draw(ctx)`、`PreTextDraw`、`PostTextDraw` 修改颜色、位移、旋转等渲染状态。
 - 默认和扩展示例可直接参考：
