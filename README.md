@@ -4,6 +4,55 @@ Modular, fully customizable and developer-friendly. EasyChat provides a vast amo
 ### Contributing
 Any contributions are welcome, please follow the naming conventions already present in the source code.
 
+### Markup / Item-Tag Implementation（标记效果实现说明）
+- EasyChat 的“标记效果”本质上是 ChatHUD 的 **Part（组件）系统**。核心入口在 `lua/easychat/chathud.lua` 的 `RegisterPart`、`CreateComponent`、`PushPartComponent`。
+- 聊天字符串会先被 `NormalizeString` 处理，再由 `PushString` 按 `<tag=value>` 解析成组件；组件在绘制时通过 `Draw(ctx)`、`PreTextDraw`、`PostTextDraw` 修改颜色、位移、旋转等渲染状态。
+- 默认和扩展示例可直接参考：
+  - `lua/easychat/chathud.lua`（基础 tag：`color`、`font`、`stop` 等）
+  - `lua/easychat/modules/extra_tags.lua`（额外效果：`c`、`flash`、`hsv`、`scale`、`rotate` 等）
+
+如果你要做一个简易自定义效果，最小实现如下（示例：`<pulse=速度,r,g,b>`）：
+
+```lua
+local chathud = EasyChat.ChatHUD
+local math_sin = math.sin
+
+local pulse_part = {
+	OkInNicks = false,
+	Usage = "<pulse=speed,r,g,b>",
+	Examples = {
+		"<pulse=3,255,64,64>Pulsing text"
+	}
+}
+
+function pulse_part:Ctor(str)
+	local args = str:Split(",")
+	self.Speed = math.Clamp(tonumber(args[1]) or 3, 0.1, 20)
+	self.TargetColor = Color(
+		tonumber(args[2]) or 255,
+		tonumber(args[3]) or 64,
+		tonumber(args[4]) or 64
+	)
+	self.Color = Color(self.TargetColor.r, self.TargetColor.g, self.TargetColor.b)
+	return self
+end
+
+function pulse_part:Draw(ctx)
+	local coef = (math_sin(CurTime() * self.Speed) + 1) * 0.5
+	self.Color.r = self.TargetColor.r * coef
+	self.Color.g = self.TargetColor.g * coef
+	self.Color.b = self.TargetColor.b * coef
+	ctx:UpdateColor(self.Color)
+end
+
+chathud:RegisterPart("pulse", pulse_part)
+```
+
+扩展建议：
+- 只做颜色/透明度变化：实现 `Ctor + Draw` 就够用（最简单、性能也好）。
+- 需要在文字前后绘制背景/描边：用 `ctx:PushPreTextDraw(self)` / `ctx:PushPostTextDraw(self)`。
+- 需要允许用户开关：`RegisterPart` 后会自动生成 `easychat_tag_<name>` 的客户端 cvar（除黑名单 tag 外）。
+
 ### Details
 - The Lua editor which was previously part of this repo has been moved [here](https://github.com/Earu/Lua-Code-Editor).
 
